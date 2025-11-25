@@ -14,7 +14,7 @@ pip install -r requirements.txt
 
 ## 2. Recommended Repository Structure
 
-.
+
 ├── app.py
 ├── prompt_engine.py
 ├── model_inference.py
@@ -24,4 +24,26 @@ pip install -r requirements.txt
 ├── HUGGINGFACE.md
 ├── GITHUB_SETUP.md
 ├── requirements.txt
-└── README.md
+└── README.
+
+
+
+## 3. Branching Strategy
+
+Main Branch (main)
+	•	Always deployable / stable
+	•	HuggingFace Space can auto-sync from main
+
+Development Branch (dev)
+	•	Active development
+	•	Feature branches merge into dev
+
+Feature Branches
+	•	Example: feature/vendor-graph
+	•	Merge into dev via PR
+
+⸻
+
+## 4. Adding New Components
+
+New Mode?
