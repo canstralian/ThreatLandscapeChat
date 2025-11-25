@@ -1,70 +1,76 @@
 import gradio as gr
-from huggingface_hub import InferenceClient
+from datetime import datetime
 
+# ---------------------------------------------------------------------------
+# Backend placeholder logic
+# ---------------------------------------------------------------------------
 
-def respond(
-    message,
-    history: list[dict[str, str]],
-    system_message,
-    max_tokens,
-    temperature,
-    top_p,
-    hf_token: gr.OAuthToken,
-):
-    """
-    For more information on `huggingface_hub` Inference API support, please check the docs: https://huggingface.co/docs/huggingface_hub/v0.22.2/en/guides/inference
-    """
-    client = InferenceClient(token=hf_token.token, model="openai/gpt-oss-20b")
+def process_message(message, files, history):
+    """Simple placeholder logic — replace with your threat-intel engine."""
+    response = f"Received: {message}"
+    if files:
+        response += f" | Files: {[f.name for f in files]}"
+    history = history + [(message, response)]
+    return history, history
 
-    messages = [{"role": "system", "content": system_message}]
+def clear_chat():
+    return [], []
 
-    messages.extend(history)
+def download_chat(history):
+    """Convert chat history to a downloadable text string."""
+    output = ""
+    for user_msg, bot_msg in history:
+        output += f"[User]: {user_msg}\n[System]: {bot_msg}\n\n"
+    return output
 
-    messages.append({"role": "user", "content": message})
+# ---------------------------------------------------------------------------
+# UI
+# ---------------------------------------------------------------------------
 
-    response = ""
+with gr.Blocks(title="Threat-Intel Chat Interface") as demo:
 
-    for message in client.chat_completion(
-        messages,
-        max_tokens=max_tokens,
-        stream=True,
-        temperature=temperature,
-        top_p=top_p,
-    ):
-        choices = message.choices
-        token = ""
-        if len(choices) and choices[0].delta.content:
-            token = choices[0].delta.content
+    gr.Markdown("### 🛰 Intelligence Chat Console")
 
-        response += token
-        yield response
+    # Chat history is stored in a gr.State object
+    chat_state = gr.State([])
 
+    with gr.Row():
+        chat = gr.Chatbot(height=450, label="Dialogue Stream")
+        with gr.Column(scale=0.4):
+            file_input = gr.File(label="Upload Files", file_count="multiple")
+            clear_btn = gr.Button("Clear Chat", variant="secondary")
+            download_btn = gr.Button("Download Transcript")
 
-"""
-For information on how to customize the ChatInterface, peruse the gradio docs: https://www.gradio.app/docs/chatinterface
-"""
-chatbot = gr.ChatInterface(
-    respond,
-    type="messages",
-    additional_inputs=[
-        gr.Textbox(value="You are a friendly Chatbot.", label="System message"),
-        gr.Slider(minimum=1, maximum=2048, value=512, step=1, label="Max new tokens"),
-        gr.Slider(minimum=0.1, maximum=4.0, value=0.7, step=0.1, label="Temperature"),
-        gr.Slider(
-            minimum=0.1,
-            maximum=1.0,
-            value=0.95,
-            step=0.05,
-            label="Top-p (nucleus sampling)",
-        ),
-    ],
-)
+    with gr.Row():
+        user_input = gr.Textbox(
+            placeholder="Type your message...",
+            label="User Input"
+        )
+        send_btn = gr.Button("Send", variant="primary")
 
-with gr.Blocks() as demo:
-    with gr.Sidebar():
-        gr.LoginButton()
-    chatbot.render()
+    # Event wiring
+    send_btn.click(
+        fn=process_message,
+        inputs=[user_input, file_input, chat_state],
+        outputs=[chat, chat_state]
+    )
 
+    user_input.submit(
+        fn=process_message,
+        inputs=[user_input, file_input, chat_state],
+        outputs=[chat, chat_state]
+    )
 
-if __name__ == "__main__":
-    demo.launch()
+    clear_btn.click(
+        fn=clear_chat,
+        inputs=None,
+        outputs=[chat, chat_state]
+    )
+
+    download_btn.click(
+        fn=download_chat,
+        inputs=chat_state,
+        outputs=gr.File()
+    )
+
+demo.launch()
